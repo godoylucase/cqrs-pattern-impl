@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-const URI = "mongodb://user_articles:user_articles_pass@localhost:27017/user_articles"
+const URI = "mongodb://articles:articles_pass@localhost:27017/articles"
 
 type MongoDBConn struct {
 	Client *mongo.Client

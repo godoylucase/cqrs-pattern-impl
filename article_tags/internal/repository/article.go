@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	dbName   = "user_articles"
+	dbName   = "articles"
 	collName = "articles"
 )
 
