@@ -3,13 +3,14 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/godoylucase/cqrs-pattern-impl/business"
 	"github.com/godoylucase/cqrs-pattern-impl/internal/db"
-	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
@@ -26,17 +27,9 @@ type repository struct {
 func NewArticleRepository(mdbc *db.MongoDBConn) (*repository, error) {
 	coll := mdbc.Client.Database(dbName).Collection(collName)
 
-	im := mongo.IndexModel{
-		Keys: bsonx.MDoc{
-			"source_url": bsonx.String("text"),
-		},
+	if err := EnsureIndex(coll, "user_id", "source_url"); err != nil {
+		return nil, err
 	}
-
-	indexName, err := coll.Indexes().CreateOne(context.TODO(), im)
-	if err != nil {
-		return nil, fmt.Errorf("error when initializing indexes from repository with error: %w", err)
-	}
-	logrus.Infof("index created with name: %v on collection %v", indexName, coll)
 
 	return &repository{
 		mongoDBConn: mdbc,
@@ -44,9 +37,12 @@ func NewArticleRepository(mdbc *db.MongoDBConn) (*repository, error) {
 	}, nil
 }
 
-func (r *repository) FindByURL(ctx context.Context, url business.URL) (*business.BaseArticle, error) {
+func (r *repository) GetByUserIDAndSourceURL(ctx context.Context, userID string, url business.URL) (*business.BaseArticle, error) {
 	var ba business.BaseArticle
-	if err := r.coll.FindOne(ctx, bson.D{{"source_url", url}}).Decode(&ba); err != nil {
+	if err := r.coll.FindOne(ctx, bson.D{
+		{"source_url", url},
+		{"user_id", userID},
+	}).Decode(&ba); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -62,5 +58,29 @@ func (r *repository) Create(ctx context.Context, article *business.BaseArticle) 
 		return "", err
 	}
 
-	return inserted.InsertedID.(primitive.ObjectID).String(), nil
+	oid := inserted.InsertedID.(primitive.ObjectID)
+
+	article.ID = oid
+
+	return oid.Hex(), nil
+}
+
+// EnsureIndex will create index on collection provided
+func EnsureIndex(cd *mongo.Collection, indexQuery ...string) error {
+
+	opts := options.CreateIndexes().SetMaxTime(3 * time.Second)
+
+	var index []mongo.IndexModel
+
+	for _, val := range indexQuery {
+		temp := mongo.IndexModel{}
+		temp.Keys = bsonx.Doc{{Key: val, Value: bsonx.Int32(1)}}
+		index = append(index, temp)
+	}
+	_, err := cd.Indexes().CreateMany(context.Background(), index, opts)
+	if err != nil {
+		fmt.Errorf("error while executing index query, with error: %w", err.Error())
+		return err
+	}
+	return nil
 }
