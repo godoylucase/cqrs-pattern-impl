@@ -7,16 +7,28 @@ type UserID string
 type HashTag string
 
 type Paragraph struct {
-	ID       *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Text     string              `json:"text" bson:"text,omitempty"`
-	HashTags []HashTag           `json:"hash_tags" bson:"hash_tags,omitempty"`
+	ID       uint      `json:"id" bson:"_id,omitempty"`
+	Text     string    `json:"text" bson:"text,omitempty"`
+	HashTags []HashTag `json:"hash_tags" bson:"hash_tags,omitempty"`
 }
 
 type BaseArticle struct {
-	ID             *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	UserID         UserID              `json:"user_id" bson:"user_id,omitempty"`
-	Title          string              `json:"title" bson:"title,omitempty"`
-	SourceURL      URL                 `json:"source_url" bson:"source_url,omitempty"`
-	GlobalHashTags []HashTag           `json:"global_hash_tags" bson:"global_hash_tags,omitempty"`
-	Paragraphs     []Paragraph         `json:"paragraphs" bson:"paragraphs,omitempty"`
+	ID             primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	UserID         UserID             `json:"user_id" bson:"user_id,omitempty"`
+	Title          string             `json:"title" bson:"title,omitempty"`
+	SourceURL      URL                `json:"source_url" bson:"source_url,omitempty"`
+	GlobalHashTags []HashTag          `json:"global_hash_tags" bson:"global_hash_tags,omitempty"`
+	Paragraphs     []Paragraph        `json:"paragraphs" bson:"paragraphs,omitempty"`
+}
+
+func (ba *BaseArticle) ToDTO() *ArticleDTO {
+	id := ba.ID.Hex()
+	return &ArticleDTO{
+		ID:             id,
+		UserID:         ba.UserID,
+		Title:          ba.Title,
+		SourceURL:      ba.SourceURL,
+		GlobalHashTags: ba.GlobalHashTags,
+		Paragraphs:     ba.Paragraphs,
+	}
 }

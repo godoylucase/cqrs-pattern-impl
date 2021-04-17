@@ -21,6 +21,9 @@ import (
 const port = 8081
 
 func main() {
+	done := make(chan interface{})
+	defer close(done)
+
 	mongoConn := db.NewMongoDBConn()
 	dbCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -31,12 +34,14 @@ func main() {
 	}
 	defer mongoConn.Disconnect(dbCtx)
 
+	eb := business.NewEventBroker(done)
+
 	ar, err := repository.NewArticleRepository(mongoConn)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	as := business.NewArticleService(ar)
+	as := business.NewArticleService(ar, eb)
 
 	h := &api.Handler{
 		As: as,
@@ -63,6 +68,7 @@ func main() {
 	sigquit := make(chan os.Signal, 1)
 	signal.Notify(sigquit, os.Interrupt, syscall.SIGTERM)
 	sig := <-sigquit
+	done <- 1
 	log.Printf("caught sig: %+v\n", sig)
 	log.Printf("Gracefully shutting down server...\n")
 
