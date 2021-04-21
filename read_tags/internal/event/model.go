@@ -62,3 +62,8 @@ func New(r Resource, a Action, data Partitionable) *Event {
 		Data:         data,
 	}
 }
+
+type Composite struct {
+	Event Event
+	Err   error
+}

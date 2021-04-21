@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/godoylucase/cqrs-pattern-impl/business"
-	"github.com/godoylucase/cqrs-pattern-impl/internal"
+	"github.com/godoylucase/articles_tags/business"
+	"github.com/godoylucase/articles_tags/internal"
 )
 
 type ArticleService interface {

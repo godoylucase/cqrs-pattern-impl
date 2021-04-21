@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/godoylucase/cqrs-pattern-impl/business"
-	"github.com/godoylucase/cqrs-pattern-impl/internal/db"
+	"github.com/godoylucase/articles_tags/business"
+	"github.com/godoylucase/articles_tags/internal/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/godoylucase/cqrs-pattern-impl/internal/event"
+	"github.com/godoylucase/articles_tags/internal/event"
 	"github.com/sirupsen/logrus"
 )
 

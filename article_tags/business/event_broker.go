@@ -1,6 +1,6 @@
 package business
 
-import "github.com/godoylucase/cqrs-pattern-impl/internal/event"
+import "github.com/godoylucase/articles_tags/internal/event"
 
 type eb struct {
 	dispatcher *event.Dispatcher
@@ -9,6 +9,10 @@ type eb struct {
 func NewEventBroker(done <-chan interface{}) *eb {
 	d := event.NewDispatcher(done)
 	return &eb{dispatcher: d}
+}
+
+func (eb *eb) Close() {
+	eb.dispatcher.Close()
 }
 
 func (eb *eb) ArticleCreation(article event.Partitionable) error {
