@@ -26,53 +26,61 @@ func NewConsumer(done <-chan interface{}) (*Consumer, error) {
 		return nil, fmt.Errorf("error creating a new cons, with error %w", err)
 	}
 
+	return newConsumer(done, consumer)
+}
+
+// newConsumer valid constructor to inject mocks for the consumer during unit testing
+func newConsumer(done <-chan interface{}, consumer sarama.Consumer) (*Consumer, error) {
 	return &Consumer{c: consumer, done: done}, nil
 }
 
-func (c *Consumer) Get(topic string, received chan Composite) error {
-	defer close(received)
+func (c *Consumer) Get(topic string) (<-chan Composite, error) {
+	eventComposites := make(chan Composite)
+	defer close(eventComposites)
 
-	ps, err := c.c.Partitions(topic)
+	partitions, err := c.c.Partitions(topic)
 	if err != nil {
-		return fmt.Errorf("error getting partitions with error: %w", err)
+		return nil, fmt.Errorf("error getting partitions with error: %w", err)
 	}
 
-	for p := range ps {
-		consumer, err := c.c.ConsumePartition(topic, int32(p), sarama.OffsetOldest)
+	for p := range partitions {
+		pc, err := c.c.ConsumePartition(topic, int32(p), sarama.OffsetOldest)
 		if err != nil {
-			return fmt.Errorf("error consuming kafka partition %v, with error: %w", p, err)
+			return nil, fmt.Errorf("error consuming kafka partition %v, with error: %w", p, err)
 		}
+
+		go func(pc sarama.PartitionConsumer) {
+			<-c.done
+			pc.AsyncClose()
+		}(pc)
 
 		go func(done <-chan interface{},
 			topic string, pc sarama.PartitionConsumer) {
 
 			for {
 				select {
-				case msg := <-consumer.Messages():
+				case msg := <-pc.Messages():
 					val := msg.Value
 
 					var event Event
 					if err := json.Unmarshal(val, &event); err != nil {
-						received <- Composite{
+						eventComposites <- Composite{
 							Err: fmt.Errorf("error unmarshalling event from '%v' topic, with error: %w", topic, err),
 						}
 					}
 
-					received <- Composite{
+					eventComposites <- Composite{
 						Event: event,
 						Err:   nil,
 					}
-				case err := <-consumer.Errors():
-					received <- Composite{
+				case err := <-pc.Errors():
+					eventComposites <- Composite{
 						Err: fmt.Errorf("error unmarshalling event from '%v' topic, with error: %w", topic, err),
 					}
-				case <-done:
-					return
 				}
 			}
-		}(c.done, topic, consumer)
-
+		}(c.done, topic, pc)
 	}
 
-	return nil
+	return eventComposites, nil
 }

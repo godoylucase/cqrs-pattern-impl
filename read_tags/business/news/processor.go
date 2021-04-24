@@ -3,8 +3,7 @@ package news
 import (
 	"fmt"
 
-	"github.com/godoylucase/read_tags/internal/event"
-	"github.com/sirupsen/logrus"
+	"github.com/godoylucase/read_tags/external/event"
 )
 
 var (
@@ -14,40 +13,41 @@ var (
 )
 
 type Resolver interface {
-	Run(received chan event.Composite) error
+	Run(done <-chan interface{}, received <-chan event.Composite)
 }
 
 type consumer interface {
-	Get(topic string, received chan event.Composite) error
+	Get(topic string) (<-chan event.Composite, error)
 }
 
 type processor struct {
-	resolver Resolver
-	received chan event.Composite
+	done     <-chan interface{}
 	resource event.Resource
 	consumer consumer
+	resolver Resolver
 }
 
-func New(resource event.Resource, consumer consumer, resolver Resolver, received chan event.Composite) *processor {
+func NewProcessor(done <-chan interface{}, resource event.Resource, resolver Resolver, consumer consumer) *processor {
 	return &processor{
-		resolver: resolver,
-		received: received,
+		done:     done,
 		resource: resource,
 		consumer: consumer,
+		resolver: resolver,
 	}
 }
 
-func (p *processor) Run() {
+func (p *processor) Run() error {
 	topic, ok := resourceTopics[p.resource]
 	if !ok {
-		panic(fmt.Errorf("the %v is a not supported topic", topic))
+		return fmt.Errorf("the %v is a not supported topic", topic)
 	}
 
-	if err := p.consumer.Get(topic, p.received); err != nil {
-		panic(err)
+	received, err := p.consumer.Get(topic)
+	if err != nil {
+		return err
 	}
 
-	if err := p.resolver.Run(p.received); err != nil {
-		logrus.Errorf("error consuming events from topic %v with error %v", topic, err)
-	}
+	p.resolver.Run(nil, received)
+
+	return nil
 }

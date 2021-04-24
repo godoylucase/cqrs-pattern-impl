@@ -1,4 +1,4 @@
-package business
+package dto
 
 type ArticleDTO struct {
 	ID             string   `json:"id"`

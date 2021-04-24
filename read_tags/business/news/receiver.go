@@ -1,24 +1,48 @@
 package news
 
 import (
-	"github.com/godoylucase/read_tags/business"
-	"github.com/godoylucase/read_tags/internal/event"
+	"github.com/godoylucase/read_tags/business/dto"
+	"github.com/godoylucase/read_tags/external/event"
+	"github.com/sirupsen/logrus"
 )
 
 type articleRepository interface {
-	SaveArticleByGlobalTags(dto business.ArticleDTO) error
+	SaveArticleByGlobalTags(dto dto.ArticleDTO) error
 }
 
-type articleReceiver struct {
+type articleResolver struct {
 	ar       articleRepository
-	received <-chan event.Composite
 }
 
-func NewArticleReceiver(ar articleRepository) *articleReceiver {
-	return &articleReceiver{ar: ar}
+func NewArticleResolver(ar articleRepository) *articleResolver {
+	return &articleResolver{ar: ar}
 }
 
-func (r *articleReceiver) Run(received chan event.Composite) error {
+func (r *articleResolver) Run(done <-chan interface{}, events <-chan event.Composite) {
+	for {
+		select {
+		case ec := <-events:
+			logrus.Infof("received event with payload %v", ec)
 
+			aDto, ok := ec.Event.Data.(dto.ArticleDTO)
+			if !ok {
+				logrus.Errorf("converting event data into ArticleDTO, event data value %v", ec.Event.Data)
+			}
+
+			if err := r.ar.SaveArticleByGlobalTags(aDto); err != nil {
+				logrus.Errorf("saving the ArticleDTO data into storage with error %v", err)
+			}
+		case <-done:
+			return
+		}
+	}
+}
+
+// TODO this will be replaced by a real DB operation
+type ARMock struct {
+}
+
+func (arm *ARMock) SaveArticleByGlobalTags(articleDto dto.ArticleDTO) error {
+	logrus.Infof("saving article dto with data %v", articleDto)
 	return nil
 }
