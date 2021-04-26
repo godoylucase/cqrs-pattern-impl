@@ -11,30 +11,23 @@ type articleRepository interface {
 }
 
 type articleResolver struct {
-	ar       articleRepository
+	ar articleRepository
 }
 
 func NewArticleResolver(ar articleRepository) *articleResolver {
 	return &articleResolver{ar: ar}
 }
 
-func (r *articleResolver) Run(done <-chan interface{}, events <-chan event.Composite) {
-	for {
-		select {
-		case ec := <-events:
-			logrus.Infof("received event with payload %v", ec)
+func (r *articleResolver) Run(ec event.Composite) {
+	logrus.Infof("received event with payload %v", ec)
 
-			aDto, ok := ec.Event.Data.(dto.ArticleDTO)
-			if !ok {
-				logrus.Errorf("converting event data into ArticleDTO, event data value %v", ec.Event.Data)
-			}
+	aDto, ok := ec.Event.Data.(dto.ArticleDTO)
+	if !ok {
+		logrus.Errorf("converting event data into ArticleDTO, event data value %v", ec.Event.Data)
+	}
 
-			if err := r.ar.SaveArticleByGlobalTags(aDto); err != nil {
-				logrus.Errorf("saving the ArticleDTO data into storage with error %v", err)
-			}
-		case <-done:
-			return
-		}
+	if err := r.ar.SaveArticleByGlobalTags(aDto); err != nil {
+		logrus.Errorf("saving the ArticleDTO data into storage with error %v", err)
 	}
 }
 

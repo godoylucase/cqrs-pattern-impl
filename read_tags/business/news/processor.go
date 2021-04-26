@@ -2,6 +2,7 @@ package news
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/godoylucase/read_tags/external/event"
 )
@@ -13,7 +14,7 @@ var (
 )
 
 type Resolver interface {
-	Run(done <-chan interface{}, received <-chan event.Composite)
+	Run(eventComposite event.Composite)
 }
 
 type consumer interface {
@@ -44,10 +45,18 @@ func (p *processor) Run() error {
 
 	received, err := p.consumer.Get(topic)
 	if err != nil {
-		return err
+		return fmt.Errorf("consumer error with value: %w", err)
 	}
 
-	p.resolver.Run(nil, received)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(wg *sync.WaitGroup, ecs <-chan event.Composite) {
+		defer wg.Done()
+		for ec := range ecs {
+			p.resolver.Run(ec)
+		}
+	}(&wg, received)
+	wg.Wait()
 
 	return nil
 }
