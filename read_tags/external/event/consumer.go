@@ -36,7 +36,7 @@ func newConsumer(done <-chan interface{}, consumer sarama.Consumer) (*Consumer, 
 
 func (c *Consumer) Get(topic string) (<-chan Composite, error) {
 	eventComposites := make(chan Composite)
-	defer close(eventComposites)
+	//defer close(eventComposites)
 
 	partitions, err := c.c.Partitions(topic)
 	if err != nil {
@@ -56,10 +56,14 @@ func (c *Consumer) Get(topic string) (<-chan Composite, error) {
 
 		go func(done <-chan interface{},
 			topic string, pc sarama.PartitionConsumer) {
+			defer close(eventComposites)
 
 			for {
 				select {
-				case msg := <-pc.Messages():
+				case msg, ok := <-pc.Messages():
+					if !ok {
+						return
+					}
 					val := msg.Value
 
 					var event Event
@@ -73,7 +77,11 @@ func (c *Consumer) Get(topic string) (<-chan Composite, error) {
 						Event: event,
 						Err:   nil,
 					}
-				case err := <-pc.Errors():
+				case err, ok := <-pc.Errors():
+					if !ok {
+						return
+					}
+
 					eventComposites <- Composite{
 						Err: fmt.Errorf("error unmarshalling event from '%v' topic, with error: %w", topic, err),
 					}

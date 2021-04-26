@@ -2,8 +2,6 @@ package event
 
 import (
 	"encoding/json"
-	"fmt"
-	"runtime"
 	"sync"
 	"testing"
 
@@ -13,8 +11,6 @@ import (
 )
 
 func TestConsumer_Get(t *testing.T) {
-	fmt.Println(runtime.NumGoroutine())
-
 	consMock := mocks.NewConsumer(t, mocks.NewTestConfig())
 
 	consMock.SetTopicMetadata(map[string][]int32{
@@ -28,9 +24,6 @@ func TestConsumer_Get(t *testing.T) {
 		YieldMessage(&sarama.ConsumerMessage{
 			Value: getJSONBytes(createdArticleMock)},
 		)
-
-	consMock.ExpectConsumePartition("article", 0, sarama.OffsetOldest).
-		YieldError(sarama.ErrOutOfBrokers)
 
 	consMock.ExpectConsumePartition("article", 0, sarama.OffsetOldest).
 		YieldMessage(&sarama.ConsumerMessage{
@@ -51,26 +44,66 @@ func TestConsumer_Get(t *testing.T) {
 	}
 
 	var wg sync.WaitGroup
-
 	wg.Add(1)
 	go func(wg *sync.WaitGroup, cs <-chan Composite) {
 		expected := getNewComposite(createdArticleMock)
 		c1 := <-cs
 		assert.EqualValues(t, expected, c1)
 
-		expectedErr := sarama.ErrOutOfBrokers
-		c2 := <-cs
-		assert.Equal(t, expectedErr, c2.Err)
-
 		expected = getNewComposite(updatedArticleMock)
-		c3 := <-cs
-		assert.EqualValues(t, expected, c3)
+		c2 := <-cs
+		assert.EqualValues(t, expected, c2)
 
 		wg.Done()
 	}(&wg, composites)
+
+	wg.Wait()
+
+	if err := consMock.Close(); err != nil {
+		t.Fatal("failed to close consumer")
+	}
 }
 
-func getNewEvent(r Resource, a Action, value int) Event {
+func TestConsumer_Get_Error(t *testing.T) {
+	consMock := mocks.NewConsumer(t, mocks.NewTestConfig())
+
+	consMock.SetTopicMetadata(map[string][]int32{
+		"article": {0},
+	})
+
+	consMock.ExpectConsumePartition("article", 0, sarama.OffsetOldest).
+		YieldError(sarama.ErrOutOfBrokers)
+
+	done := make(chan interface{})
+	defer close(done)
+
+	consumerMock, err := newConsumer(done, consMock)
+	if err != nil {
+		t.Fatalf("unexpected error")
+	}
+
+	composites, err := consumerMock.Get("article")
+	if err != nil {
+		t.Fatalf("unexpected error")
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(wg *sync.WaitGroup, cs <-chan Composite) {
+		c1 := <-cs
+		assert.Error(t, c1.Err)
+
+		wg.Done()
+	}(&wg, composites)
+
+	wg.Wait()
+
+	if err := consMock.Close(); err != nil {
+		t.Fatal("failed to close consumer")
+	}
+}
+
+func getNewEvent(r Resource, a Action, value float64) Event {
 	return Event{
 		Key:          "someValidKey",
 		FromResource: r.String(),
