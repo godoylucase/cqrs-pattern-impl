@@ -3,6 +3,7 @@ package news
 import (
 	"github.com/godoylucase/read_tags/business/dto"
 	"github.com/godoylucase/read_tags/external/event"
+	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,12 +22,13 @@ func NewArticleResolver(ar articleRepository) *articleResolver {
 func (r *articleResolver) Run(ec event.Composite) {
 	logrus.Infof("received event with payload %v", ec)
 
-	aDto, ok := ec.Event.Data.(dto.ArticleDTO)
-	if !ok {
-		logrus.Errorf("converting event data into ArticleDTO, event data value %v", ec.Event.Data)
+	var adto dto.ArticleDTO
+	if err := mapstructure.Decode(ec.Event.Data, &adto); err != nil {
+		logrus.Errorf("error converting event data into ArticleDTO with error: %v", err)
+		return
 	}
 
-	if err := r.ar.SaveArticleByGlobalTags(aDto); err != nil {
+	if err := r.ar.SaveArticleByGlobalTags(adto); err != nil {
 		logrus.Errorf("saving the ArticleDTO data into storage with error %v", err)
 	}
 }

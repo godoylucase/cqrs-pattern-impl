@@ -51,7 +51,7 @@ type Event struct {
 	Key          string      `json:"key"`
 	FromResource string      `json:"resource"`
 	WithAction   string      `json:"action"`
-	Data         interface{} `json:"data"`
+	Data         interface{} `json:"data"` // TODO change this to map[string]interface{}
 }
 
 func New(r Resource, a Action, data Partitionable) *Event {
