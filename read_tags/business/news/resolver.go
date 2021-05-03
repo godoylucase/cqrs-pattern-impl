@@ -1,6 +1,8 @@
 package news
 
 import (
+	"fmt"
+
 	"github.com/godoylucase/read_tags/business/dto"
 	"github.com/godoylucase/read_tags/external/event"
 	"github.com/mitchellh/mapstructure"
@@ -8,7 +10,8 @@ import (
 )
 
 type articleRepository interface {
-	SaveArticleByGlobalTags(dto dto.ArticleDTO) error
+	SaveArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error
+	SaveUserByArticle(dto dto.UserByArticle) error
 }
 
 type articleResolver struct {
@@ -19,25 +22,36 @@ func NewArticleResolver(ar articleRepository) *articleResolver {
 	return &articleResolver{ar: ar}
 }
 
-func (r *articleResolver) Run(ec event.Composite) {
+func (r *articleResolver) Run(ec event.Composite) error {
 	logrus.Infof("received event with payload %v", ec)
 
-	var adto dto.ArticleDTO
+	var adto dto.Article
 	if err := mapstructure.Decode(ec.Event.Data, &adto); err != nil {
-		logrus.Errorf("error converting event data into ArticleDTO with error: %v", err)
-		return
+		return fmt.Errorf("error converting event data into Article with error: %w", err)
 	}
 
-	if err := r.ar.SaveArticleByGlobalTags(adto); err != nil {
-		logrus.Errorf("saving the ArticleDTO data into storage with error %v", err)
+	if err := r.convertAndSave(adto); err != nil {
+		return err
 	}
+
+	return nil
 }
 
-// TODO this will be replaced by a real DB operation
-type ARMock struct {
-}
+func (r *articleResolver) convertAndSave(adto dto.Article) error {
+	abght := adto.ToArticleByGlobalHashTag()
 
-func (arm *ARMock) SaveArticleByGlobalTags(articleDto dto.ArticleDTO) error {
-	logrus.Infof("saving article dto with data %v", articleDto)
+	for _, a := range abght {
+		if err := r.ar.SaveArticleByGlobalTags(a); err != nil {
+			// TODO approach error handling better (by appending errors maybe)
+			logrus.Errorf("error when saving article by global hash tags with values %v and error %v", a, err)
+		}
+	}
+
+	uba := adto.ToUserByArticle()
+	if err := r.ar.SaveUserByArticle(uba); err != nil {
+		// TODO approach error handling better (by appending errors maybe)
+		logrus.Errorf("error when saving user by article with values %v and error %v", uba, err)
+	}
+
 	return nil
 }

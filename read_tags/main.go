@@ -8,11 +8,17 @@ import (
 
 	"github.com/godoylucase/read_tags/business/news"
 	"github.com/godoylucase/read_tags/external/event"
+	"github.com/godoylucase/read_tags/internal/db"
+	"github.com/godoylucase/read_tags/internal/repository"
 )
 
 func main() {
+	cassandraClient, err := db.Cassandra()
+	if err != nil {
+		panic(err)
+	}
 
-	artRepo := &news.ARMock{}
+	artRepo := repository.NewArticle(cassandraClient)
 	resolverFactory := news.NewResolverFactory(artRepo)
 
 	articleResolver, err := resolverFactory.Get(event.ARTICLE)

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/godoylucase/read_tags/external/event"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -14,7 +15,7 @@ var (
 )
 
 type Resolver interface {
-	Run(eventComposite event.Composite)
+	Run(eventComposite event.Composite) error
 }
 
 type consumer interface {
@@ -50,10 +51,13 @@ func (p *processor) Run() error {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+
 	go func(wg *sync.WaitGroup, ecs <-chan event.Composite) {
 		defer wg.Done()
 		for ec := range ecs {
-			p.resolver.Run(ec)
+			if err := p.resolver.Run(ec); err != nil {
+				logrus.Errorf("error when processing incoming events from topic with error: %v", err)
+			}
 		}
 	}(&wg, received)
 	wg.Wait()
