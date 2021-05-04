@@ -1,9 +1,6 @@
 package db
 
 import (
-	"crypto/tls"
-	"strconv"
-
 	"github.com/gocql/gocql"
 )
 
@@ -12,26 +9,28 @@ type Client struct {
 }
 
 const (
-	contactPoint = ""
-	port         = ""
-	user         = ""
-	password     = ""
+	port     = 9042
+	user     = "cassandra"
+	password = "cassandra"
+)
+
+var (
+	addresses = []string{"localhost"}
 )
 
 func Cassandra() (*Client, error) {
-	clusterConfig := gocql.NewCluster(contactPoint)
-	p, err := strconv.Atoi(port)
-	if err != nil {
-		return nil, err
-	}
+	clusterConfig := gocql.NewCluster(addresses...)
 
 	clusterConfig.Authenticator = gocql.PasswordAuthenticator{Username: user, Password: password}
-	clusterConfig.Port = p
-	clusterConfig.SslOpts = &gocql.SslOptions{Config: &tls.Config{MinVersion: tls.VersionTLS12}}
+	clusterConfig.Port = port
 	clusterConfig.ProtoVersion = 4
 
 	session, err := clusterConfig.CreateSession()
 	if err != nil {
+		return nil, err
+	}
+
+	if err := configSchemaAndTables(session); err != nil {
 		return nil, err
 	}
 

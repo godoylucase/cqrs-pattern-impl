@@ -15,10 +15,6 @@ const (
 )
 
 func initialize(session *gocql.Session) error {
-	if err := createKeySpace(ArticleSpace, session); err != nil {
-		return err
-	}
-
 	if err := v0_0_1__20210428_init(session); err != nil {
 		return err
 	}
@@ -26,15 +22,15 @@ func initialize(session *gocql.Session) error {
 	return nil
 }
 
-//func dropKeySpaceIfExists(keyspace string, Session *gocql.Session) error {
-//	err := Session.Query(fmt.Sprintf(dropKeyspaceQuery, keyspace)).Exec()
-//	if err != nil {
-//		return err
-//	}
-//
-//	logrus.Infof("keyspace %v dropped", keyspace)
-//	return nil
-//}
+func dropKeySpaceIfExists(keyspace string, Session *gocql.Session) error {
+	err := Session.Query(fmt.Sprintf(dropKeyspaceQuery, keyspace)).Exec()
+	if err != nil {
+		return err
+	}
+
+	logrus.Infof("keyspace %v dropped", keyspace)
+	return nil
+}
 
 func createKeySpace(keyspace string, session *gocql.Session) error {
 	err := session.Query(fmt.Sprintf(createKeyspaceQuery, keyspace)).Exec()
@@ -47,9 +43,13 @@ func createKeySpace(keyspace string, session *gocql.Session) error {
 }
 
 func v0_0_1__20210428_init(session *gocql.Session) error {
-	//if err := dropKeySpaceIfExists(ArticleSpace, Session); err != nil {
-	//	return err
-	//}
+	if err := dropKeySpaceIfExists(ArticleSpace, session); err != nil {
+		return err
+	}
+
+	if err := dropKeySpaceIfExists(UserSpace, session); err != nil {
+		return err
+	}
 
 	if err := createKeySpace(ArticleSpace, session); err != nil {
 		return err

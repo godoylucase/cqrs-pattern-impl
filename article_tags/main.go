@@ -44,14 +44,12 @@ func main() {
 
 	as := business.NewArticleService(ar, eb)
 
-	h := &api.Handler{
-		As: as,
-	}
-	api := api.Configure(h, gin.Default())
+	h := api.NewHandler(as)
+	apiHandler := api.Configure(h, gin.Default())
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%v", port),
-		Handler:      api,
+		Handler:      apiHandler,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,

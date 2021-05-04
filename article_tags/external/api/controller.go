@@ -10,12 +10,16 @@ import (
 	"github.com/godoylucase/articles_tags/internal"
 )
 
-type ArticleService interface {
+type articleService interface {
 	Create(ctx context.Context, ba *business.BaseArticle) (string, error)
 }
 
 type Handler struct {
-	As ArticleService
+	as articleService
+}
+
+func NewHandler(as articleService) *Handler {
+	return &Handler{as: as}
 }
 
 func (h *Handler) CreateArticle(c *gin.Context) {
@@ -30,7 +34,7 @@ func (h *Handler) CreateArticle(c *gin.Context) {
 
 	// TODO validate body completion else appError -> 400
 
-	id, err := h.As.Create(c, &article)
+	id, err := h.as.Create(c, &article)
 	if err != nil {
 		c.Error(err)
 		return

@@ -18,6 +18,8 @@ services:
     image: 'bitnami/cassandra:latest'
     container_name: cassandra
     hostname: cassandra
+    ports:
+      - '9042:9042'
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
