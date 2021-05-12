@@ -23,7 +23,7 @@ func (r *repo) SaveArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error {
 		db.ArticleSpace,
 		db.ArticleByGlobalHashTagsTable)
 
-	if err := r.client.Session.Query(query, dto.GlobalHashTag, dto.ArticleID, dto.SourceURL).Exec(); err != nil {
+	if err := r.client.Session.Query(query, dto.GlobalHashTags, dto.Detail.ArticleID, dto.Detail.SourceURL).Exec(); err != nil {
 		return err
 	}
 
@@ -43,7 +43,7 @@ func (r *repo) SaveUserByArticle(dto dto.UserByArticle) error {
 	return nil
 }
 
-func (r *repo) GetArticleByGlobalTags(globalHashTags []string) ([]dto.ArticleByGlobalHashTag, error) {
+func (r *repo) GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error) {
 	var ght []string
 	for _, value := range globalHashTags {
 		v := fmt.Sprintf("'%s'", value)
@@ -53,22 +53,32 @@ func (r *repo) GetArticleByGlobalTags(globalHashTags []string) ([]dto.ArticleByG
 	in := strings.Join(ght, ",")
 	query := fmt.Sprintf("SELECT * FROM %s.%s where global_hash_tag IN (%s)", db.ArticleSpace, db.ArticleByGlobalHashTagsTable, in)
 
-	results, err := r.client.Session.Query(query).Iter().SliceMap()
+	queryResults, err := r.client.Session.Query(query).Iter().SliceMap()
 	if err != nil {
-		return nil, err
+		return dto.ArticleByGlobalHashTagRead{}, err
 	}
 
-	var articles []dto.ArticleByGlobalHashTag
-	var article dto.ArticleByGlobalHashTag
-	for _, r := range results {
-		if err := mapstructure.Decode(r, &article); err != nil {
-			return nil, err
+	resultMap := make(map[string][]dto.ArticleByGlobalHashTagDetail)
+	for _, qr := range queryResults {
+		key := qr["global_hash_tag"].(string)
+
+		hashTagDetail := dto.ArticleByGlobalHashTagDetail{
+			ArticleID: qr["article_id"].(string),
+			SourceURL: qr["source_url"].(string),
 		}
 
-		articles = append(articles, article)
+		existingDets, ok := resultMap[key]
+		if !ok {
+			var details []dto.ArticleByGlobalHashTagDetail
+			resultMap[key] = append(details, hashTagDetail)
+			continue
+		}
+
+		existingDets = append(existingDets, hashTagDetail)
+		resultMap[key] = existingDets
 	}
 
-	return articles, nil
+	return dto.ArticleByGlobalHashTagRead{GlobalHashTags: resultMap}, nil
 }
 
 func (r *repo) GetUsersByArticle(articleID string) ([]dto.UserByArticle, error) {

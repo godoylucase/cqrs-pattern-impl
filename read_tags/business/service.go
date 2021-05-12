@@ -3,7 +3,7 @@ package business
 import "github.com/godoylucase/read_tags/business/dto"
 
 type repository interface {
-	GetArticleByGlobalTags(globalHashTags []string) ([]dto.ArticleByGlobalHashTag, error)
+	GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error)
 	GetUsersByArticle(articleID string) ([]dto.UserByArticle, error)
 }
 
@@ -15,10 +15,10 @@ func NewQueryService(repository repository) *service {
 	return &service{repository: repository}
 }
 
-func (s *service) GetArticleByGlobalTags(globalHashTags []string) ([]dto.ArticleByGlobalHashTag, error) {
+func (s *service) GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error) {
 	articles, err := s.repository.GetArticleByGlobalTags(globalHashTags)
 	if err != nil {
-		return nil, err
+		return dto.ArticleByGlobalHashTagRead{}, err
 	}
 
 	return articles, nil

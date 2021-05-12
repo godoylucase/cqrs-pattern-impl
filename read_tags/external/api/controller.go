@@ -9,7 +9,7 @@ import (
 )
 
 type service interface {
-	GetArticleByGlobalTags(globalHashTags []string) ([]dto.ArticleByGlobalHashTag, error)
+	GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error)
 	GetUsersByArticle(articleID string) ([]dto.UserByArticle, error)
 }
 
