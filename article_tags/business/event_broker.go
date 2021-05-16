@@ -22,3 +22,11 @@ func (eb *eb) ArticleCreation(article event.Partitionable) error {
 
 	return nil
 }
+
+func (eb *eb) ArticleUpdate(article event.Partitionable) error {
+	if err := eb.dispatcher.Send(event.ARTICLE, event.UPDATE, article); err != nil {
+		return err
+	}
+
+	return nil
+}

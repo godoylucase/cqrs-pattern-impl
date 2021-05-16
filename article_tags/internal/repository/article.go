@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/godoylucase/articles_tags/business"
+	"github.com/godoylucase/articles_tags/internal"
 	"github.com/godoylucase/articles_tags/internal/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -27,7 +28,7 @@ type repository struct {
 func NewArticleRepository(mdbc *db.MongoDBConn) (*repository, error) {
 	coll := mdbc.Client.Database(dbName).Collection(collName)
 
-	if err := EnsureIndex(coll, "user_id", "source_url"); err != nil {
+	if err := ensureIndex(coll, "user_id", "source_url"); err != nil {
 		return nil, err
 	}
 
@@ -65,8 +66,39 @@ func (r *repository) Create(ctx context.Context, article *business.BaseArticle) 
 	return oid.Hex(), nil
 }
 
-// EnsureIndex will create index on collection provided
-func EnsureIndex(cd *mongo.Collection, indexQuery ...string) error {
+func (r *repository) Get(ctx context.Context, id string) (*business.BaseArticle, error) {
+	var ba business.BaseArticle
+
+	objID, _ := primitive.ObjectIDFromHex(id)
+	if err := r.coll.FindOne(ctx, bson.D{{"_id", objID}}).Decode(&ba); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &ba, nil
+
+}
+
+func (r *repository) Update(ctx context.Context, id string, ba *business.BaseArticle) error {
+	objID, _ := primitive.ObjectIDFromHex(id)
+	filter := bson.D{{"_id", objID}}
+
+	updateResult, err := r.coll.ReplaceOne(ctx, filter, ba)
+	if err != nil {
+		return fmt.Errorf("error when updating article with ID %v and error %w", id, err)
+	}
+
+	if updateResult.ModifiedCount == 0 {
+		return fmt.Errorf("error article with ID %v not found: %w", id, internal.ErrResourceNotFound)
+	}
+
+	return nil
+}
+
+// ensureIndex will create index on collection provided
+func ensureIndex(cd *mongo.Collection, indexQuery ...string) error {
 
 	opts := options.CreateIndexes().SetMaxTime(3 * time.Second)
 
