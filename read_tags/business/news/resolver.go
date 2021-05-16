@@ -10,8 +10,8 @@ import (
 )
 
 type articleRepository interface {
-	SaveArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error
-	SaveUserByArticle(dto dto.UserByArticle) error
+	UpsertArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error
+	UpsertUserByArticle(dto dto.UserByArticle) error
 }
 
 type articleResolver struct {
@@ -30,25 +30,28 @@ func (r *articleResolver) Run(ec event.Composite) error {
 		return fmt.Errorf("error converting event data into Article with error: %w", err)
 	}
 
-	if err := r.convertAndSave(adto); err != nil {
-		return err
+	if ec.Event.WithAction == event.CREATE.String() ||
+		ec.Event.WithAction == event.UPDATE.String() {
+		if err := r.convertAndUpsert(adto); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (r *articleResolver) convertAndSave(adto dto.Article) error {
+func (r *articleResolver) convertAndUpsert(adto dto.Article) error {
 	abght := adto.ToArticleByGlobalHashTag()
 
 	for _, a := range abght {
-		if err := r.ar.SaveArticleByGlobalTags(a); err != nil {
+		if err := r.ar.UpsertArticleByGlobalTags(a); err != nil {
 			// TODO approach error handling better (by appending errors maybe)
 			logrus.Errorf("error when saving article by global hash tags with values %v and error %v", a, err)
 		}
 	}
 
 	uba := adto.ToUserByArticle()
-	if err := r.ar.SaveUserByArticle(uba); err != nil {
+	if err := r.ar.UpsertUserByArticle(uba); err != nil {
 		// TODO approach error handling better (by appending errors maybe)
 		logrus.Errorf("error when saving user by article with values %v and error %v", uba, err)
 	}

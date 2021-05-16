@@ -17,7 +17,7 @@ func NewArticle(client *db.Client) *repo {
 	return &repo{client: client}
 }
 
-func (r *repo) SaveArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error {
+func (r *repo) UpsertArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error {
 	query := fmt.Sprintf(
 		"INSERT INTO %s.%s (global_hash_tag, article_id , source_url) VALUES (?,?,?)",
 		db.ArticleSpace,
@@ -30,7 +30,7 @@ func (r *repo) SaveArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error {
 	return nil
 }
 
-func (r *repo) SaveUserByArticle(dto dto.UserByArticle) error {
+func (r *repo) UpsertUserByArticle(dto dto.UserByArticle) error {
 	query := fmt.Sprintf(
 		"INSERT INTO %s.%s (article_id, user_id , source_url) VALUES (?,?,?)",
 		db.UserSpace,
