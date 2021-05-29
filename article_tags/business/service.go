@@ -10,7 +10,7 @@ import (
 )
 
 type repository interface {
-	GetByUserIDAndSourceURL(ctx context.Context, userID string, url URL) (*BaseArticle, error)
+	GetByUserIDAndSourceURL(ctx context.Context, userID string, url string) (*BaseArticle, error)
 	Create(ctx context.Context, article *BaseArticle) (string, error)
 	Get(ctx context.Context, id string) (*BaseArticle, error)
 	Update(ctx context.Context, id string, ba *BaseArticle) error

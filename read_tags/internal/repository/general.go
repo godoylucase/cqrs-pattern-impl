@@ -82,7 +82,7 @@ func (r *repo) GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlo
 }
 
 func (r *repo) GetUsersByArticle(articleID string) ([]dto.UserByArticle, error) {
-	query := fmt.Sprintf("SELECT * FROM %s.%s where article_id=%s", db.ArticleSpace, db.ArticleByGlobalHashTagsTable, articleID)
+	query := fmt.Sprintf("SELECT * FROM %s.%s where article_id='%s'", db.UserSpace, db.UserByArticleTable, articleID)
 
 	results, err := r.client.Session.Query(query).Iter().SliceMap()
 	if err != nil {

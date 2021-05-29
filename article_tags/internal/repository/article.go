@@ -38,7 +38,7 @@ func NewArticleRepository(mdbc *db.MongoDBConn) (*repository, error) {
 	}, nil
 }
 
-func (r *repository) GetByUserIDAndSourceURL(ctx context.Context, userID string, url business.URL) (*business.BaseArticle, error) {
+func (r *repository) GetByUserIDAndSourceURL(ctx context.Context, userID string, url string) (*business.BaseArticle, error) {
 	var ba business.BaseArticle
 	if err := r.coll.FindOne(ctx, bson.D{
 		{"source_url", url},
@@ -78,7 +78,6 @@ func (r *repository) Get(ctx context.Context, id string) (*business.BaseArticle,
 	}
 
 	return &ba, nil
-
 }
 
 func (r *repository) Update(ctx context.Context, id string, ba *business.BaseArticle) error {

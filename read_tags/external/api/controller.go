@@ -38,3 +38,20 @@ func (h *Handler) GetArticleByGlobalHashTags(c *gin.Context) {
 
 	c.JSON(http.StatusOK, aghts)
 }
+
+func (h *Handler) GetUsersByArticle(c *gin.Context) {
+	values := c.Request.URL.Query()
+	aid, ok := values["article_id"]
+	if !ok {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	uba, err := h.service.GetUsersByArticle(aid[0])
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, uba)
+}
