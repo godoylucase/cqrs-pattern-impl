@@ -14,6 +14,13 @@ services:
       - '27017:27017'
       - '27019:27019'
 
+  cassandra:
+    image: 'bitnami/cassandra:latest'
+    container_name: cassandra
+    hostname: cassandra
+    ports:
+      - '9042:9042'
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -21,6 +28,11 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: [ "CMD-SHELL", "echo ruok | nc -w 2 zookeeper 4444" ]
+      interval: 5s
+      timeout: 10s
+      retries: 3
 
   kafka:
     image: confluentinc/cp-kafka:latest

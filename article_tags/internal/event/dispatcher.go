@@ -27,6 +27,7 @@ func NewDispatcher(done <-chan interface{}) *Dispatcher {
 	config.Producer.Return.Successes = true
 
 	producer, err := sarama.NewAsyncProducer(brokers, config)
+	// TODO change this urgently
 	if err != nil {
 		return nil
 	}
@@ -73,4 +74,8 @@ func (d *Dispatcher) doSend(e *Event, topic string) error {
 	}
 
 	return nil
+}
+
+func (d *Dispatcher) Close() {
+	d.Close()
 }

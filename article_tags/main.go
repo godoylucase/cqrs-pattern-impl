@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/godoylucase/cqrs-pattern-impl/business"
-	"github.com/godoylucase/cqrs-pattern-impl/external/api"
-	"github.com/godoylucase/cqrs-pattern-impl/internal/db"
-	"github.com/godoylucase/cqrs-pattern-impl/internal/repository"
+	"github.com/godoylucase/articles_tags/business"
+	"github.com/godoylucase/articles_tags/external/api"
+	"github.com/godoylucase/articles_tags/internal/db"
+	"github.com/godoylucase/articles_tags/internal/repository"
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,6 +35,7 @@ func main() {
 	defer mongoConn.Disconnect(dbCtx)
 
 	eb := business.NewEventBroker(done)
+	defer eb.Close()
 
 	ar, err := repository.NewArticleRepository(mongoConn)
 	if err != nil {
@@ -43,14 +44,12 @@ func main() {
 
 	as := business.NewArticleService(ar, eb)
 
-	h := &api.Handler{
-		As: as,
-	}
-	api := api.Configure(h, gin.Default())
+	h := api.NewHandler(as)
+	apiHandler := api.Configure(h, gin.Default())
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%v", port),
-		Handler:      api,
+		Handler:      apiHandler,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
