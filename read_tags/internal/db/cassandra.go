@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	addresses = []string{"localhost"}
+	addresses = []string{"cassandra"}
 )
 
 func Cassandra() (*Client, error) {

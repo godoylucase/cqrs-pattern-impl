@@ -9,7 +9,7 @@ import (
 
 var (
 	// TODO change the ports to be internal when dockerized app is ready
-	brokers = []string{"localhost:29092"}
+	brokers = []string{"kafka:9092"}
 )
 
 type Consumer struct {
