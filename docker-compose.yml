@@ -1,9 +1,37 @@
-version: '3'
+version: '3.8'
 services:
+  article_tags:
+    image: 'article_tags:latest'
+    container_name: 'article_tags'
+    hostname: 'article_tags'
+    build: ./article_tags
+    ports:
+      - '8081:8081'
+    restart: on-failure
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+
+  read_tags:
+    image: 'read_tags:latest'
+    container_name: 'read_tags'
+    hostname: 'read_tags'
+    build: ./read_tags
+    ports:
+      - '8082:8082'
+    restart: on-failure
+    depends_on:
+      cassandra:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
   mongodb:
     image: 'mongo'
-    container_name: 'cqrs-mongodb'
-    hostname: 'cqrs-mongodb'
+    container_name: 'mongodb'
+    hostname: 'mongodb'
     environment:
       - MONGO_INITDB_DATABASE=articles
       - MONGO_INITDB_ROOT_USERNAME=root
@@ -13,6 +41,11 @@ services:
     ports:
       - '27017:27017'
       - '27019:27019'
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   cassandra:
     image: 'bitnami/cassandra:latest'
@@ -20,6 +53,12 @@ services:
     hostname: cassandra
     ports:
       - '9042:9042'
+    healthcheck:
+      test: [ "CMD-SHELL", "[ $$(nodetool statusgossip) = running ]" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -28,8 +67,10 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOO_4LW_COMMANDS_WHITELIST: stat,ruok,conf,isro
+    restart: on-failure
     healthcheck:
-      test: [ "CMD-SHELL", "echo ruok | nc -w 2 zookeeper 4444" ]
+      test: echo ruok | nc -w 2 zookeeper 2181
       interval: 5s
       timeout: 10s
       retries: 3
@@ -41,7 +82,7 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - 29092:29092
+      - 9092:9092
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -49,3 +90,9 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    restart: on-failure
+    healthcheck:
+      test: kafka-topics --list --zookeeper zookeeper:2181
+      interval: 30s
+      timeout: 10s
+      retries: 4
