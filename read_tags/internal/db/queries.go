@@ -12,11 +12,11 @@ const (
     PRIMARY KEY ((global_hash_tag), article_id)) WITH comment = 'Q1. Finds articles by global hash tags'
 	AND CLUSTERING ORDER BY (article_id DESC);`
 
-	usersByArticleCreateQuery = `CREATE TABLE user.users_by_article (
+	UserArticlesBySourceURLCreateQuery = `CREATE TABLE user.users_articles_by_source_url (
     source_url text,
     article_id text,
     user_id text,
-    PRIMARY KEY ((article_id), user_id)) WITH comment = 'Q2. Finds users by articles'
+    PRIMARY KEY ((source_url), user_id)) WITH comment = 'Q2. Finds users by articles'
 	AND CLUSTERING ORDER BY (user_id DESC);`
 
 )
