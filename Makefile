@@ -11,4 +11,4 @@ build:
 .PHONY: run
 run:
 	@echo "Running CQRS Architecture Example ..."
-	@docker-compose -f $(DOCKER_FILE) up -d --remove-orphans --force-recreate
+	@docker-compose -f $(DOCKER_FILE) up -d --remove-orphans

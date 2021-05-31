@@ -6,7 +6,6 @@ import (
 
 	"github.com/godoylucase/read_tags/business/dto"
 	"github.com/godoylucase/read_tags/internal/db"
-	"github.com/mitchellh/mapstructure"
 )
 
 type repo struct {
@@ -30,20 +29,20 @@ func (r *repo) UpsertArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error {
 	return nil
 }
 
-func (r *repo) UpsertUserByArticle(dto dto.UserByArticle) error {
+func (r *repo) UpsertUserBySourceURL(dto dto.Article) error {
 	query := fmt.Sprintf(
-		"INSERT INTO %s.%s (article_id, user_id , source_url) VALUES (?,?,?)",
+		"INSERT INTO %s.%s (source_url, user_id, article_id) VALUES (?,?,?)",
 		db.UserSpace,
-		db.UserByArticleTable)
+		db.UserArticlesBySourceURLTable)
 
-	if err := r.client.Session.Query(query, dto.ArticleID, dto.UserID, dto.SourceURL).Exec(); err != nil {
+	if err := r.client.Session.Query(query, dto.SourceURL, dto.UserID, dto.ID).Exec(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *repo) GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error) {
+func (r *repo) ArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error) {
 	var ght []string
 	for _, value := range globalHashTags {
 		v := fmt.Sprintf("'%s'", value)
@@ -81,23 +80,33 @@ func (r *repo) GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlo
 	return dto.ArticleByGlobalHashTagRead{GlobalHashTags: resultMap}, nil
 }
 
-func (r *repo) GetUsersByArticle(articleID string) ([]dto.UserByArticle, error) {
-	query := fmt.Sprintf("SELECT * FROM %s.%s where article_id='%s'", db.UserSpace, db.UserByArticleTable, articleID)
+func (r *repo) UserArticlesBySourceURL(sourceUrl string) (dto.UserArticlesBySourceURLRead, error) {
+	query := fmt.Sprintf("SELECT * FROM %s.%s where source_url='%s'", db.UserSpace, db.UserArticlesBySourceURLTable, sourceUrl)
 
-	results, err := r.client.Session.Query(query).Iter().SliceMap()
+	queryResults, err := r.client.Session.Query(query).Iter().SliceMap()
 	if err != nil {
-		return nil, err
+		return dto.UserArticlesBySourceURLRead{}, err
 	}
 
-	var usersByArticle []dto.UserByArticle
-	var userByArticle dto.UserByArticle
-	for _, r := range results {
-		if err := mapstructure.Decode(r, &userByArticle); err != nil {
-			return nil, err
+	sus := make(map[string][]dto.UserArticle)
+	for _, qr := range queryResults {
+		key := qr["source_url"].(string)
+
+		read := dto.UserArticle{
+			ArticleID: qr["article_id"].(string),
+			UserID:    qr["user_id"].(string),
 		}
 
-		usersByArticle = append(usersByArticle, userByArticle)
+		existingDets, ok := sus[key]
+		if !ok {
+			var ua []dto.UserArticle
+			sus[key] = append(ua, read)
+			continue
+		}
+
+		existingDets = append(existingDets, read)
+		sus[key] = existingDets
 	}
 
-	return usersByArticle, nil
+	return dto.UserArticlesBySourceURLRead{SourceURLs: sus}, nil
 }

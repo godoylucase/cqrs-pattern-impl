@@ -11,7 +11,7 @@ import (
 
 type articleRepository interface {
 	UpsertArticleByGlobalTags(dto dto.ArticleByGlobalHashTag) error
-	UpsertUserByArticle(dto dto.UserByArticle) error
+	UpsertUserBySourceURL(dto dto.Article) error
 }
 
 type articleResolver struct {
@@ -50,10 +50,9 @@ func (r *articleResolver) convertAndUpsert(adto dto.Article) error {
 		}
 	}
 
-	uba := adto.ToUserByArticle()
-	if err := r.ar.UpsertUserByArticle(uba); err != nil {
+	if err := r.ar.UpsertUserBySourceURL(adto); err != nil {
 		// TODO approach error handling better (by appending errors maybe)
-		logrus.Errorf("error when saving user by article with values %v and error %v", uba, err)
+		logrus.Errorf("error when saving user by article with values %v and error %v", adto, err)
 	}
 
 	return nil

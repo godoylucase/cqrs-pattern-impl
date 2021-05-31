@@ -28,13 +28,6 @@ func (a *Article) ToArticleByGlobalHashTag() []ArticleByGlobalHashTag {
 	return list
 }
 
-func (a *Article) ToUserByArticle() UserByArticle {
-	return UserByArticle{
-		UserID:    a.UserID,
-		ArticleID: a.ID,
-	}
-}
-
 type ArticleByGlobalHashTag struct {
 	GlobalHashTags string                       `mapstructure:"global_hash_tag" json:"global_hash_tag"`
 	Detail         ArticleByGlobalHashTagDetail `mapstructure:",squash" json:"detail"`
@@ -46,11 +39,14 @@ type ArticleByGlobalHashTagDetail struct {
 }
 
 type ArticleByGlobalHashTagRead struct {
-	GlobalHashTags map[string][]ArticleByGlobalHashTagDetail
+	GlobalHashTags map[string][]ArticleByGlobalHashTagDetail `json:"global_hash_tags"`
 }
 
-type UserByArticle struct {
+type UserArticle struct {
 	ArticleID string `mapstructure:"article_id" json:"article_id"`
 	UserID    string `mapstructure:"user_id" json:"user_id"`
-	SourceURL string `mapstructure:"source_url" json:"source_url"`
+}
+
+type UserArticlesBySourceURLRead struct {
+	SourceURLs map[string][]UserArticle `json:"source_urls"`
 }

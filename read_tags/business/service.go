@@ -3,8 +3,8 @@ package business
 import "github.com/godoylucase/read_tags/business/dto"
 
 type repository interface {
-	GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error)
-	GetUsersByArticle(articleID string) ([]dto.UserByArticle, error)
+	ArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error)
+	UserArticlesBySourceURL(articleID string) (dto.UserArticlesBySourceURLRead, error)
 }
 
 type service struct {
@@ -16,7 +16,7 @@ func NewQueryService(repository repository) *service {
 }
 
 func (s *service) GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error) {
-	articles, err := s.repository.GetArticleByGlobalTags(globalHashTags)
+	articles, err := s.repository.ArticleByGlobalTags(globalHashTags)
 	if err != nil {
 		return dto.ArticleByGlobalHashTagRead{}, err
 	}
@@ -24,11 +24,11 @@ func (s *service) GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleBy
 	return articles, nil
 }
 
-func (s *service) GetUsersByArticle(articleID string) ([]dto.UserByArticle, error) {
-	users, err := s.repository.GetUsersByArticle(articleID)
+func (s *service) GetUserArticlesBySourceURL(sourceURL string) (dto.UserArticlesBySourceURLRead, error) {
+	ua, err := s.repository.UserArticlesBySourceURL(sourceURL)
 	if err != nil {
-		return nil, err
+		return dto.UserArticlesBySourceURLRead{}, err
 	}
 
-	return users, nil
+	return ua, nil
 }

@@ -10,7 +10,7 @@ import (
 
 type service interface {
 	GetArticleByGlobalTags(globalHashTags []string) (dto.ArticleByGlobalHashTagRead, error)
-	GetUsersByArticle(articleID string) ([]dto.UserByArticle, error)
+	GetUserArticlesBySourceURL(articleID string) (dto.UserArticlesBySourceURLRead, error)
 }
 
 type Handler struct {
@@ -41,13 +41,13 @@ func (h *Handler) GetArticleByGlobalHashTags(c *gin.Context) {
 
 func (h *Handler) GetUsersByArticle(c *gin.Context) {
 	values := c.Request.URL.Query()
-	aid, ok := values["article_id"]
+	su, ok := values["source_url"]
 	if !ok {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	uba, err := h.service.GetUsersByArticle(aid[0])
+	uba, err := h.service.GetUserArticlesBySourceURL(su[0])
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

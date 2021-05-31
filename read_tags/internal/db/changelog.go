@@ -11,7 +11,7 @@ const (
 	ArticleSpace                 = "article"
 	ArticleByGlobalHashTagsTable = "articles_by_global_hash_tag"
 	UserSpace                    = "user"
-	UserByArticleTable           = "users_by_article"
+	UserArticlesBySourceURLTable = "users_articles_by_source_url"
 )
 
 func initialize(session *gocql.Session) error {
@@ -65,10 +65,10 @@ func v0_0_1__20210428_init(session *gocql.Session) error {
 	}
 	logrus.Infof("table %s.%s created", ArticleSpace, ArticleByGlobalHashTagsTable)
 
-	if err := session.Query(usersByArticleCreateQuery).Exec(); err != nil {
+	if err := session.Query(UserArticlesBySourceURLCreateQuery).Exec(); err != nil {
 		return err
 	}
-	logrus.Infof("table %s.%s created", UserSpace, UserByArticleTable)
+	logrus.Infof("table %s.%s created", UserSpace, UserArticlesBySourceURLTable)
 
 	return nil
 }
