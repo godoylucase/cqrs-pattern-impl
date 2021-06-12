@@ -1,4 +1,6 @@
 ## CQRS Pattern Example
+This repository is a PoC for the CQRS Pattern. 
+If you are looking to know more about it, just checkout this [Medium Series]()
 
 ### How to use it?
 To run just run
@@ -6,7 +8,6 @@ To run just run
 $ make build
 $ make run
 ```
-
 
 #### Article Tags
 ##### Create
