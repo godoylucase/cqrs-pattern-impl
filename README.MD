@@ -1,6 +1,6 @@
 ## CQRS Pattern Example
 This repository is a PoC for the CQRS Pattern. 
-If you are looking to know more about it, just checkout this [Medium Series]()
+If you are looking to know more about it, just checkout this [Medium Series](https://godoy-lucas-e.medium.com/cqrs-architecture-pattern-c7f5c613c59c)
 
 ### How to use it?
 To run just run
